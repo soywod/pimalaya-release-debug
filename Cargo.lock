@@ -1216,9 +1216,9 @@ dependencies = [
 
 [[package]]
 name = "email-lib"
-version = "0.19.3"
+version = "0.19.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe171bfe0da0325f867e90b72e5be234f57d417f6949727c7999757ee86dfcab"
+checksum = "af01cff5ab1d3b658d84596af1277d96c6793a5af8a92534c100aed8a4192fae"
 dependencies = [
  "advisory-lock",
  "anyhow",
