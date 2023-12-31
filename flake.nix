@@ -34,7 +34,8 @@
           rust-toolchain = mkToolchain.fromFile { system = buildPlatform; };
           macosBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
             # CoreServices
-            Foundation
+            # Foundation
+            Cocoa
           ];
 
         in
@@ -97,12 +98,10 @@
           # macos = defaultPackage;
           macos = mkPackageWithTarget null {
             nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              # CoreServices
-              Foundation
+              Cocoa
             ];
             buildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              # CoreServices
-              Foundation
+              Cocoa
             ];
           };
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
