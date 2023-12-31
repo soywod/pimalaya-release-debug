@@ -92,9 +92,8 @@
           # macos = defaultPackage;
           macos = mkPackageWithTarget null {
             nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              CoreServices
+              # CoreServices
               Foundation
-              libiconv
             ];
           };
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
