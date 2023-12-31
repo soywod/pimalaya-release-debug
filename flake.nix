@@ -32,11 +32,16 @@
         let
           pkgs = import nixpkgs { system = buildPlatform; };
           rust-toolchain = mkToolchain.fromFile { system = buildPlatform; };
+          macosBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
+            # CoreServices
+            Foundation
+          ];
+
         in
         {
           default = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [ pkg-config ];
-            buildInputs = with pkgs; [
+            nativeBuildInputs = with pkgs; macosBuildInputs ++ [ pkg-config ];
+            buildInputs = with pkgs; macosBuildInputs ++ [
               # Nix
               rnix-lsp
               nixpkgs-fmt
@@ -92,7 +97,11 @@
           # macos = defaultPackage;
           macos = mkPackageWithTarget null {
             nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              CoreServices
+              # CoreServices
+              Foundation
+            ];
+            buildInputs = with pkgs.darwin.apple_sdk.frameworks; [
+              # CoreServices
               Foundation
             ];
           };

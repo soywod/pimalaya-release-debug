@@ -4,25 +4,25 @@ on:
   push:
 
 jobs:
-  create_release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: 'version-${{ github.sha }}'
-          release_name: 'version-${{ github.sha }}'
-          draft: false
-          prerelease: false
+  # create_release:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #   steps:
+  #     - name: Create release
+  #       id: create_release
+  #       uses: actions/create-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: 'version-${{ github.sha }}'
+  #         release_name: 'version-${{ github.sha }}'
+  #         draft: false
+  #         prerelease: false
 
   deploy_github:
     runs-on: ${{ matrix.os }}
-    needs: create_release
+    # needs: create_release
     strategy:
       fail-fast: false
       matrix:
