@@ -32,17 +32,11 @@
         let
           pkgs = import nixpkgs { system = buildPlatform; };
           rust-toolchain = mkToolchain.fromFile { system = buildPlatform; };
-          macosBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-            # CoreServices
-            # Foundation
-            Cocoa
-          ];
-
         in
         {
           default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [ pkg-config ];
-            buildInputs = with pkgs; macosBuildInputs ++ [
+            buildInputs = with pkgs; [
               # Nix
               rnix-lsp
               nixpkgs-fmt
@@ -95,7 +89,15 @@
         {
           default = defaultPackage;
           linux = defaultPackage;
-          macos = defaultPackage;
+          # macos = defaultPackage;
+          macos = mkPackageWithTarget null {
+            nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
+              Cocoa
+            ];
+            # buildInputs = with pkgs.darwin.apple_sdk.frameworks; [
+            #   Cocoa
+            # ];
+          };
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
             CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
             SQLITE3_STATIC = 1;
