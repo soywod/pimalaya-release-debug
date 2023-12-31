@@ -42,7 +42,7 @@
         {
           default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; macosBuildInputs ++ [ pkg-config ];
-            buildInputs = with pkgs; macosBuildInputs ++ [
+            buildInputs = with pkgs; [
               # Nix
               rnix-lsp
               nixpkgs-fmt
@@ -95,15 +95,7 @@
         {
           default = defaultPackage;
           linux = defaultPackage;
-          # macos = defaultPackage;
-          macos = mkPackageWithTarget null {
-            nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              Cocoa
-            ];
-            buildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              Cocoa
-            ];
-          };
+          macos = defaultPackage;
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
             CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
             SQLITE3_STATIC = 1;
