@@ -91,7 +91,7 @@
           linux = defaultPackage;
           # macos = defaultPackage;
           macos = mkPackageWithTarget null {
-            depsBuildBuild = with pkgs.darwin.apple_sdk.frameworks; [
+            nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
               CoreServices
               Foundation
               libiconv
