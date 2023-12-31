@@ -51,14 +51,16 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build release
         run: nix build .#${{ matrix.target }}
-      - name: Fix interpreter path on Linux
-        if: ${{ matrix.target == 'linux' }}
-        run: |
-          nix-shell -p patchelf --command "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 result/bin/himalaya"
-      - name: Compress executable
+      - name: Copy executable and prepare folders
         run: |
           mkdir -p {man,completions}
           cp result/bin/himalaya* .
+      - name: Patch interpreter
+        if: ${{ matrix.target == 'linux' }}
+        run: |
+          nix-shell -p patchelf --command "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 himalaya"
+      - name: Build release archive
+        run: |
           nix run .#${{ matrix.target }} man ./man
           nix run .#${{ matrix.target }} completion bash > ./completions/himalaya.bash
           nix run .#${{ matrix.target }} completion elvish > ./completions/himalaya.elvish
