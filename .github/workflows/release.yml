@@ -54,7 +54,7 @@ jobs:
       - name: Fix interpreter path on Linux
         if: ${{ matrix.target == 'linux' }}
         run: |
-          nix-shell -p patchelf --command "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 target/release/himalaya"
+          nix-shell -p patchelf --command "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 result/bin/himalaya"
       - name: Compress executable
         run: |
           mkdir -p {man,completions}
