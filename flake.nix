@@ -92,7 +92,7 @@
           # macos = defaultPackage;
           macos = mkPackageWithTarget null {
             nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              # CoreServices
+              CoreServices
               Foundation
             ];
           };
