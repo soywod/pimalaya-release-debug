@@ -89,14 +89,8 @@
         {
           default = defaultPackage;
           linux = defaultPackage;
-          # macos = defaultPackage;
           macos = mkPackageWithTarget null {
-            nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-              Cocoa
-            ];
-            # buildInputs = with pkgs.darwin.apple_sdk.frameworks; [
-            #   Cocoa
-            # ];
+            nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [ Cocoa ];
           };
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
             CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
