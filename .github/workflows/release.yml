@@ -58,8 +58,7 @@ jobs:
       - name: Patch interpreter
         if: ${{ matrix.target == 'linux' }}
         run: |
-          chmod +x himalaya
-          nix-shell -p patchelf --command "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 himalaya"
+          nix-shell -p patchelf --command "sudo patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 himalaya"
       - name: Build release archive
         run: |
           nix run .#${{ matrix.target }} man ./man
