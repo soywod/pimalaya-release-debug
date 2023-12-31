@@ -1,12 +1,7 @@
-use notify_rust::{error::Result, Notification};
+use keyring::Entry;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    Notification::new()
-        .summary("Firefox News")
-        .body("This will almost look like a real firefox notification.")
-        .show_async()
-        .await?;
-
-    Ok(())
+async fn main() {
+    let passwd = Entry::new("a", "b").unwrap().get_password().unwrap();
+    println!("passwd: {:?}", passwd);
 }

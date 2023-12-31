@@ -16,6 +16,5 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-notify-rust = "4"
 keyring = { version = "2.2", default-features = false }
 tokio = { version = "1.23", default-features = false, features = ["macros", "rt-multi-thread"] }
