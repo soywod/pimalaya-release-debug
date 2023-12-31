@@ -41,8 +41,8 @@
         in
         {
           default = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; macosBuildInputs ++ [ pkg-config ];
-            buildInputs = with pkgs; [
+            nativeBuildInputs = with pkgs; [ pkg-config ];
+            buildInputs = with pkgs; macosBuildInputs ++ [
               # Nix
               rnix-lsp
               nixpkgs-fmt
