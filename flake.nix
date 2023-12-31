@@ -36,8 +36,8 @@
         in
         {
           default = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [ pkg-config ];
-            buildInputs = with pkgs; lib.optionals stdenv.isDarwin macosBuildInputs ++ [
+            nativeBuildInputs = with pkgs; lib.optionals stdenv.isDarwin macosBuildInputs ++ [ pkg-config ];
+            buildInputs = with pkgs; [
               # Nix
               rnix-lsp
               nixpkgs-fmt

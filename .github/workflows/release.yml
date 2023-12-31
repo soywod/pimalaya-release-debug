@@ -27,12 +27,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: linux
-            os: ubuntu-latest
+          # - target: linux
+          #   os: ubuntu-latest
           - target: macos
             os: macos-latest
-          - target: musl
-            os: ubuntu-latest
+          # - target: musl
+          #   os: ubuntu-latest
           # TODO: put back when nix package .#windows is fixed
           # - target: windows
           #   os: ubuntu-latest
@@ -89,52 +89,52 @@ jobs:
           asset_content_type: application/zip
 
   # TODO: remove me when nix package .#windows is fixed
-  deploy_windows_github:
-    runs-on: windows-latest
-    needs: create_release
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - name: Builds release
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
-      - name: Compress executable
-        run: |
-          mkdir man
-          mkdir completions
-          copy target/release/himalaya.exe .
-          ./himalaya.exe man ./man
-          ./himalaya.exe completion bash > ./completions/himalaya.bash
-          ./himalaya.exe completion elvish > ./completions/himalaya.elvish
-          ./himalaya.exe completion fish > ./completions/himalaya.fish
-          ./himalaya.exe completion powershell > ./completions/himalaya.powershell
-          ./himalaya.exe completion zsh > ./completions/himalaya.zsh
-          tar -czf himalaya.tgz himalaya.exe man completions
-          Compress-Archive -Path himalaya.exe,man,completions -DestinationPath himalaya.zip
-      - name: Upload tar.gz release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: himalaya.tgz
-          asset_name: himalaya-windows.tgz
-          asset_content_type: application/gzip
-      - name: Upload zip release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: himalaya.zip
-          asset_name: himalaya-windows.zip
-          asset_content_type: application/zip
+  # deploy_windows_github:
+  #   runs-on: windows-latest
+  #   needs: create_release
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
+  #     - name: Install rust
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #     - name: Builds release
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: build
+  #         args: --release
+  #     - name: Compress executable
+  #       run: |
+  #         mkdir man
+  #         mkdir completions
+  #         copy target/release/himalaya.exe .
+  #         ./himalaya.exe man ./man
+  #         ./himalaya.exe completion bash > ./completions/himalaya.bash
+  #         ./himalaya.exe completion elvish > ./completions/himalaya.elvish
+  #         ./himalaya.exe completion fish > ./completions/himalaya.fish
+  #         ./himalaya.exe completion powershell > ./completions/himalaya.powershell
+  #         ./himalaya.exe completion zsh > ./completions/himalaya.zsh
+  #         tar -czf himalaya.tgz himalaya.exe man completions
+  #         Compress-Archive -Path himalaya.exe,man,completions -DestinationPath himalaya.zip
+  #     - name: Upload tar.gz release asset
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create_release.outputs.upload_url }}
+  #         asset_path: himalaya.tgz
+  #         asset_name: himalaya-windows.tgz
+  #         asset_content_type: application/gzip
+  #     - name: Upload zip release asset
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create_release.outputs.upload_url }}
+  #         asset_path: himalaya.zip
+  #         asset_name: himalaya-windows.zip
+  #         asset_content_type: application/zip
 
   # deploy_crates:
   #   runs-on: ubuntu-latest
