@@ -20,53 +20,32 @@ jobs:
   #         draft: false
   #         prerelease: false
 
-  deploy_github:
-    runs-on: ${{ matrix.os }}
+  deploy_macos_github:
+    runs-on: macos-latest
     # needs: create_release
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # - target: linux
-          #   os: ubuntu-latest
-          - target: macos
-            os: macos-latest
-          # - target: musl
-          #   os: ubuntu-latest
-          # TODO: put back when nix package .#windows is fixed
-          # - target: windows
-          #   os: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2        
-      - name: Install Nix
-        uses: cachix/install-nix-action@v24
+        uses: actions/checkout@v2
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
         with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - uses: cachix/cachix-action@v12
+          toolchain: stable
+      - name: Builds release
+        uses: actions-rs/cargo@v1
         with:
-          name: soywod
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: Build release
-        run: nix build -L .#${{ matrix.target }}
-      - name: Copy executable and prepare folders
+          command: build
+          args: --release
+      - name: Compress executable
         run: |
-          mkdir -p {man,completions}
-          cp result/bin/himalaya* .
-      - name: Patch interpreter
-        if: ${{ matrix.target == 'linux' }}
-        run: |
-          nix-shell -p patchelf --command "sudo patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 himalaya"
-      - name: Build release archive
-        run: |
-          nix run .#${{ matrix.target }} man ./man
-          nix run .#${{ matrix.target }} completion bash > ./completions/himalaya.bash
-          nix run .#${{ matrix.target }} completion elvish > ./completions/himalaya.elvish
-          nix run .#${{ matrix.target }} completion fish > ./completions/himalaya.fish
-          nix run .#${{ matrix.target }} completion powershell > ./completions/himalaya.powershell
-          nix run .#${{ matrix.target }} completion zsh > ./completions/himalaya.zsh
+          mkdir man
+          mkdir completions
+          cp target/release/himalaya .
+          ./himalaya man ./man
+          ./himalaya completion bash > ./completions/himalaya.bash
+          ./himalaya completion elvish > ./completions/himalaya.elvish
+          ./himalaya completion fish > ./completions/himalaya.fish
+          ./himalaya completion powershell > ./completions/himalaya.powershell
+          ./himalaya completion zsh > ./completions/himalaya.zsh
           tar -czf himalaya.tgz himalaya* man completions
           zip -r himalaya.zip himalaya* man completions
       - name: Upload tar.gz release asset
@@ -76,7 +55,7 @@ jobs:
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: himalaya.tgz
-          asset_name: himalaya-${{ matrix.target }}.tgz
+          asset_name: himalaya-macos.tgz
           asset_content_type: application/gzip
       - name: Upload zip release asset
         uses: actions/upload-release-asset@v1
@@ -85,7 +64,7 @@ jobs:
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: himalaya.zip
-          asset_name: himalaya-${{ matrix.target }}.zip
+          asset_name: himalaya-macos.zip
           asset_content_type: application/zip
 
   # TODO: remove me when nix package .#windows is fixed

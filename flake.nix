@@ -2,7 +2,7 @@
   description = "CLI to manage emails";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
@@ -89,12 +89,18 @@
         {
           default = defaultPackage;
           linux = defaultPackage;
-          macos = mkPackageWithTarget null (with pkgs.darwin.apple_sdk.frameworks; {
+          macos = mkPackageWithTarget null {
             # CARGO_BUILD_RUSTFLAGS = "-C panic=abort";
             # NIX_LDFLAGS = "-F${CoreFoundation}/Library/Frameworks -framework CoreFoundation";
-            buildInputs = with pkgs; [ libiconv AppKit Cocoa CoreFoundation CoreServices Foundation ];
-            depsBuildBuild = with pkgs; [ libiconv AppKit Cocoa CoreFoundation CoreServices Foundation ];
-          });
+            buildInputs = with pkgs.darwin.apple_sdk.frameworks; [
+              pkgs.libiconv
+              AppKit
+              Cocoa
+              CoreFoundation
+              CoreServices
+              Foundation
+            ];
+          };
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
             CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
             SQLITE3_STATIC = 1;
