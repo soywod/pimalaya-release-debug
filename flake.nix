@@ -89,11 +89,11 @@
         {
           default = defaultPackage;
           linux = defaultPackage;
-          macos = mkPackageWithTarget null {
-            CARGO_BUILD_RUSTFLAGS = "-C panic=abort";
-            nativeBuildInputs = with pkgs.darwin.apple_sdk.frameworks; [ AppKit Cocoa Foundation ];
-            buildInputs = with pkgs.darwin.apple_sdk.frameworks; [ AppKit Cocoa Foundation ];
-          };
+          macos = mkPackageWithTarget null (with pkgs.darwin.apple_sdk.frameworks; {
+            # CARGO_BUILD_RUSTFLAGS = "-C panic=abort";
+            NIX_LDFLAGS = "-F${CoreFoundation}/Library/Frameworks -framework CoreFoundation";
+            buildInputs = [ Cocoa CoreFoundation ];
+          });
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
             CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
             SQLITE3_STATIC = 1;
