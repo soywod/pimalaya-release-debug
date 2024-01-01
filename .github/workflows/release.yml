@@ -20,7 +20,7 @@ jobs:
           draft: false
           prerelease: false
 
-  deploy_unix_github:
+  deploy-unix-github:
     runs-on: ${{ matrix.os }}
     needs: create-release
     strategy:
@@ -76,7 +76,47 @@ jobs:
           asset_name: himalaya-${{ matrix.target }}.zip
           asset_content_type: application/zip
 
-  deploy_windows_github:
+  deploy-linux-musl-github:
+    runs-on: ubuntu-latest
+    needs: create_release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build release
+        run: |
+          docker run -v "${PWD}:/volume" --rm -t clux/muslrust:stable cargo build --release
+      - name: Prepare release archive
+        run: |
+          mkdir -p {man,completions}
+          cp target/x86_64-unknown-linux-musl/release/himalaya .
+          ./himalaya man ./man
+          ./himalaya completion bash > ./completions/himalaya.bash
+          ./himalaya completion elvish > ./completions/himalaya.elvish
+          ./himalaya completion fish > ./completions/himalaya.fish
+          ./himalaya completion powershell > ./completions/himalaya.powershell
+          ./himalaya completion zsh > ./completions/himalaya.zsh
+          tar -czf himalaya.tgz himalaya* man completions
+          zip -r himalaya.zip himalaya* man completions
+      - name: Upload tarball release archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: himalaya.tgz
+          asset_name: himalaya-linux-musl.tgz
+          asset_content_type: application/gzip
+      - name: Upload zip release archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: himalaya.zip
+          asset_name: himalaya-linux-musl.zip
+          asset_content_type: application/zip
+
+  deploy-windows-github:
     runs-on: windows-latest
     needs: create-release
     steps:
