@@ -89,6 +89,12 @@
         {
           default = defaultPackage;
           linux = defaultPackage;
+          linux-musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
+            CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+            SQLITE3_STATIC = 1;
+            SQLITE3_LIB_DIR = "${sqlite.out}/lib";
+            hardeningDisable = [ "all" ];
+          });
           macos = mkPackageWithTarget null (with pkgs.darwin.apple_sdk.frameworks; {
             # CARGO_BUILD_RUSTFLAGS = "-C panic=abort";
             NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
@@ -97,12 +103,6 @@
             # preConfigure = ''
             #   export NIX_LDFLAGS="-F${AppKit}/Library/Frameworks -framework AppKit $NIX_LDFLAGS"
             # '';
-          });
-          musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
-            CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            SQLITE3_STATIC = 1;
-            SQLITE3_LIB_DIR = "${sqlite.out}/lib";
-            hardeningDisable = [ "all" ];
           });
           # FIXME: bzlip: fatal error: windows.h: No such file or directory
           # May be related to SQLite.
@@ -123,8 +123,8 @@
       mkApps = buildPlatform: {
         default = mkApp self.packages.${buildPlatform}.default;
         linux = mkApp self.packages.${buildPlatform}.linux;
+        linux-musl = mkApp self.packages.${buildPlatform}.linux-musl;
         macos = mkApp self.packages.${buildPlatform}.macos;
-        musl = mkApp self.packages.${buildPlatform}.musl;
         windows =
           let
             pkgs = import nixpkgs { system = buildPlatform; };
