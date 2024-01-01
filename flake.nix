@@ -91,11 +91,12 @@
           linux = defaultPackage;
           macos = mkPackageWithTarget null (with pkgs.darwin.apple_sdk.frameworks; {
             # CARGO_BUILD_RUSTFLAGS = "-C panic=abort";
-            # NIX_LDFLAGS = "-F${CoreFoundation}/Library/Frameworks -framework CoreFoundation";
+            NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+            # CARGO_BUILD_RUSTFLAGS = "- target-feature=+crt-static";
             buildInputs = [ Cocoa CoreFoundation ];
-            preConfigure = ''
-              export NIX_LDFLAGS="-F${CoreFoundation}/Library/Frameworks -framework CoreFoundation $NIX_LDFLAGS"
-            '';
+            # preConfigure = ''
+            #   export NIX_LDFLAGS="-F${CoreFoundation}/Library/Frameworks -framework CoreFoundation $NIX_LDFLAGS"
+            # '';
           });
           musl = mkPackageWithTarget "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
             CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
