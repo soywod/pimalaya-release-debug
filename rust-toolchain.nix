@@ -17,7 +17,7 @@ in
     if
       isNull targetPlatform
     then
-      fenix.packages.${buildPlatform}.toolchainOf { inherit channel sha256; }
+      fenix.packages.${buildPlatform}.${channel}.toolchain
     else
       toolchain.combine [
         toolchain.${channel}.rustc
