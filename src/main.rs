@@ -1,3 +1,5 @@
+use notify_rust::Notification;
+
 fn main() {
-    println!("Hello, world!");
+    Notification::new().summary("coucou").show().unwrap();
 }

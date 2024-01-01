@@ -16,4 +16,4 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-mac-notification-sys = "0.6"
+notify-rust = "4"
