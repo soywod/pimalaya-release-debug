@@ -100,10 +100,17 @@
           });
           # FIXME: bzlip: fatal error: windows.h: No such file or directory
           # May be related to SQLite.
-          windows = mkPackage' "x86_64-pc-windows-gnu" {
+          # windows = mkPackage' "x86_64-pc-windows-gnu" {
+          #   strictDeps = true;
+          #   # CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS = "-L native=${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
+          #   depsBuildBuild = with pkgs.pkgsCross.mingwW64; [
+          #     stdenv.cc
+          #     windows.pthreads
+          #   ];
+          # };
+          windows = mkPackage' null {
             strictDeps = true;
-            # CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS = "-L native=${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
-            depsBuildBuild = with pkgs.pkgsCross.mingwW64; [
+            depsBuildBuild = with pkgs; [
               stdenv.cc
               windows.pthreads
             ];

@@ -35,7 +35,7 @@ jobs:
             os: macos-latest
           # TODO: uncomment once nix build .#windows works
           - target: windows
-            os: ubuntu-latest
+            os: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2        
