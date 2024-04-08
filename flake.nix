@@ -2,7 +2,7 @@
   description = "CLI to synchronize and backup emails";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -105,7 +105,7 @@
             # CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS = "-L native=${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
             depsBuildBuild = with pkgs.pkgsCross.mingwW64; [
               stdenv.cc
-              windows.mingw_w64_pthreads
+              windows.pthreads
             ];
           };
         };
