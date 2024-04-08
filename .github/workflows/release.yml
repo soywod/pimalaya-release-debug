@@ -53,30 +53,30 @@ jobs:
         run: nix build -L .#${{ matrix.target }}
       - name: Copy binary
         run: |
-          cp result/bin/himalaya* .
+          cp result/bin/neverest* .
       - name: Patch binary interpreter
         if: ${{ matrix.target == 'linux' }}
         run: |
-          nix-shell -p patchelf --command "sudo patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 himalaya"
+          nix-shell -p patchelf --command "sudo patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 neverest"
       - name: Prepare release archives
         run: |
           mkdir -p {man,completions}
           nix run .#${{ matrix.target }} man ./man
-          nix run .#${{ matrix.target }} completion bash > ./completions/himalaya.bash
-          nix run .#${{ matrix.target }} completion elvish > ./completions/himalaya.elvish
-          nix run .#${{ matrix.target }} completion fish > ./completions/himalaya.fish
-          nix run .#${{ matrix.target }} completion powershell > ./completions/himalaya.powershell
-          nix run .#${{ matrix.target }} completion zsh > ./completions/himalaya.zsh
-          tar -czf himalaya.tgz himalaya* man completions
-          zip -r himalaya.zip himalaya* man completions
+          nix run .#${{ matrix.target }} completion bash > ./completions/neverest.bash
+          nix run .#${{ matrix.target }} completion elvish > ./completions/neverest.elvish
+          nix run .#${{ matrix.target }} completion fish > ./completions/neverest.fish
+          nix run .#${{ matrix.target }} completion powershell > ./completions/neverest.powershell
+          nix run .#${{ matrix.target }} completion zsh > ./completions/neverest.zsh
+          tar -czf neverest.tgz neverest* man completions
+          zip -r neverest.zip neverest* man completions
       - name: Upload tarball release archive
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: himalaya.tgz
-          asset_name: himalaya-${{ matrix.target }}.tgz
+          asset_path: neverest.tgz
+          asset_name: neverest-${{ matrix.target }}.tgz
           asset_content_type: application/gzip
       - name: Upload zip release archive
         uses: actions/upload-release-asset@v1
@@ -84,8 +84,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: himalaya.zip
-          asset_name: himalaya-${{ matrix.target }}.zip
+          asset_path: neverest.zip
+          asset_name: neverest-${{ matrix.target }}.zip
           asset_content_type: application/zip
 
   # TODO: remove me once nix build .#windows works
@@ -107,27 +107,27 @@ jobs:
           args: --release
       - name: Copy binary
         run: |
-          copy target/release/himalaya.exe .
+          copy target/release/neverest.exe .
       - name: Prepare release archives
         run: |
           mkdir man
           mkdir completions
-          ./himalaya.exe man ./man
-          ./himalaya.exe completion bash > ./completions/himalaya.bash
-          ./himalaya.exe completion elvish > ./completions/himalaya.elvish
-          ./himalaya.exe completion fish > ./completions/himalaya.fish
-          ./himalaya.exe completion powershell > ./completions/himalaya.powershell
-          ./himalaya.exe completion zsh > ./completions/himalaya.zsh
-          tar -czf himalaya.tgz himalaya.exe man completions
-          Compress-Archive -Path himalaya.exe,man,completions -DestinationPath himalaya.zip
+          ./neverest.exe man ./man
+          ./neverest.exe completion bash > ./completions/neverest.bash
+          ./neverest.exe completion elvish > ./completions/neverest.elvish
+          ./neverest.exe completion fish > ./completions/neverest.fish
+          ./neverest.exe completion powershell > ./completions/neverest.powershell
+          ./neverest.exe completion zsh > ./completions/neverest.zsh
+          tar -czf neverest.tgz neverest.exe man completions
+          Compress-Archive -Path neverest.exe,man,completions -DestinationPath neverest.zip
       - name: Upload tarball release archive
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: himalaya.tgz
-          asset_name: himalaya-windows.tgz
+          asset_path: neverest.tgz
+          asset_name: neverest-windows.tgz
           asset_content_type: application/gzip
       - name: Upload zip release archive
         uses: actions/upload-release-asset@v1
@@ -135,6 +135,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: himalaya.zip
-          asset_name: himalaya-windows.zip
+          asset_path: neverest.zip
+          asset_name: neverest-windows.zip
           asset_content_type: application/zip
