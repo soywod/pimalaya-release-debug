@@ -34,8 +34,8 @@ jobs:
           - target: macos
             os: macos-latest
           # TODO: uncomment once nix build .#windows works
-          # - target: windows
-          #   os: ubuntu-latest
+          - target: windows
+            os: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2        
@@ -89,52 +89,52 @@ jobs:
           asset_content_type: application/zip
 
   # TODO: remove me once nix build .#windows works
-  deploy-windows-release:
-    runs-on: windows-latest
-    needs: create-release
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-      - name: Build release
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
-      - name: Copy binary
-        run: |
-          copy target/release/neverest.exe .
-      - name: Prepare release archives
-        run: |
-          mkdir man
-          mkdir completions
-          ./neverest.exe man ./man
-          ./neverest.exe completion bash > ./completions/neverest.bash
-          ./neverest.exe completion elvish > ./completions/neverest.elvish
-          ./neverest.exe completion fish > ./completions/neverest.fish
-          ./neverest.exe completion powershell > ./completions/neverest.powershell
-          ./neverest.exe completion zsh > ./completions/neverest.zsh
-          tar -czf neverest.tgz neverest.exe man completions
-          Compress-Archive -Path neverest.exe,man,completions -DestinationPath neverest.zip
-      - name: Upload tarball release archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: neverest.tgz
-          asset_name: neverest-windows.tgz
-          asset_content_type: application/gzip
-      - name: Upload zip release archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: neverest.zip
-          asset_name: neverest-windows.zip
-          asset_content_type: application/zip
+  # deploy-windows-release:
+  #   runs-on: windows-latest
+  #   needs: create-release
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
+  #     - name: Install rust
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         profile: minimal
+  #     - name: Build release
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: build
+  #         args: --release
+  #     - name: Copy binary
+  #       run: |
+  #         copy target/release/neverest.exe .
+  #     - name: Prepare release archives
+  #       run: |
+  #         mkdir man
+  #         mkdir completions
+  #         ./neverest.exe man ./man
+  #         ./neverest.exe completion bash > ./completions/neverest.bash
+  #         ./neverest.exe completion elvish > ./completions/neverest.elvish
+  #         ./neverest.exe completion fish > ./completions/neverest.fish
+  #         ./neverest.exe completion powershell > ./completions/neverest.powershell
+  #         ./neverest.exe completion zsh > ./completions/neverest.zsh
+  #         tar -czf neverest.tgz neverest.exe man completions
+  #         Compress-Archive -Path neverest.exe,man,completions -DestinationPath neverest.zip
+  #     - name: Upload tarball release archive
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
+  #         asset_path: neverest.tgz
+  #         asset_name: neverest-windows.tgz
+  #         asset_content_type: application/gzip
+  #     - name: Upload zip release archive
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
+  #         asset_path: neverest.zip
+  #         asset_name: neverest-windows.zip
+  #         asset_content_type: application/zip
