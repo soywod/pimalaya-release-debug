@@ -2,7 +2,7 @@
   description = "CLI to synchronize and backup emails";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,7 +39,7 @@
             ];
             buildInputs = with pkgs; [
               # Nix
-              rnix-lsp
+              # rnix-lsp
               nixpkgs-fmt
 
               # Rust
