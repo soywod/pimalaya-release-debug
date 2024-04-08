@@ -2,7 +2,7 @@ fenix:
 
 let
   file = ./rust-toolchain.toml;
-  sha256 = "e4mlaJehWBymYxJGgnbuCObVlqMlQSilZ8FljG9zPHY=";
+  sha256 = "3St/9/UKo/6lz2Kfq2VmlzHyufduALpiIKaaKX4Pq0g=";
 in
 {
   fromFile = { system }: fenix.packages.${system}.fromToolchainFile {
