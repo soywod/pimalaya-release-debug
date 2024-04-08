@@ -834,9 +834,9 @@ checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
 
 [[package]]
 name = "email-lib"
-version = "0.23.0"
+version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4177206cdae365e311b0a97a95764e9fe86c8c791d89b4f057de8d741d1b8c8"
+checksum = "32b7520f59dd646a978cf4e0ec3e08f1f8df3710f930775206174e059b163963"
 dependencies = [
  "advisory-lock",
  "async-trait",
@@ -1692,9 +1692,9 @@ dependencies = [
 
 [[package]]
 name = "keyring-lib"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d181ffce2036da938d84a22f0e64a48cda3e72d7ba6398efae13fe43c694b788"
+checksum = "a2e6d01e57f1b382ba5a1c40ef866855e8bab15f7caa4033480db80a5b9b9aff"
 dependencies = [
  "keyring",
  "log",
@@ -1915,9 +1915,9 @@ dependencies = [
 
 [[package]]
 name = "mml-lib"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "251ed73fdc4a16a256055cd5a6999c1cd2e37a944f0ffcb7544dbc0ac9dca37a"
+checksum = "7e2de0a0ae66e61b51b72355d6cad8a92e456258f44b27c57393fd8829344b48"
 dependencies = [
  "async-recursion",
  "chumsky",
@@ -2890,9 +2890,9 @@ dependencies = [
 
 [[package]]
 name = "secret-lib"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20c272cb9ac9d989d0f398926bbf75c03c8b2242196420403df6568a0eaf083d"
+checksum = "d99d0df4b8cb27c13c953abaf74bd089922a783fad99cd2b08b369cf7fabcbc9"
 dependencies = [
  "keyring-lib",
  "log",
