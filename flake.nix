@@ -104,7 +104,7 @@
             strictDeps = true;
             depsBuildBuild = with pkgs.pkgsCross.mingwW64; [
               stdenv.cc
-              # pthreads
+              pkgs.windows.pthreads
             ];
           };
         };
