@@ -71,12 +71,6 @@
           package' = {
             name = "neverest";
             src = gitignoreSource ./.;
-            overrideMain = _: {
-              postInstall = ''
-                mkdir -p $out/share/applications/
-                cp assets/neverest.desktop $out/share/applications/
-              '';
-            };
             doCheck = true;
             cargoTestOptions = opts: opts ++ [ "--lib" ];
           } // pkgs.lib.optionalAttrs (!isNull targetPlatform) {
