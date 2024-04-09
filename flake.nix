@@ -117,8 +117,8 @@
           aarch64-apple-darwin = pkgs: rec {
             buildInputs = with pkgs; [ zip darwin.apple_sdk.frameworks.Cocoa ];
             NIX_LDFLAGS = with pkgs; "-F${darwin.apple_sdk.frameworks.AppKit}/Library/Frameworks -framework AppKit";
-            TARGET_CC = with pkgs.pkgsCross; "${builtins.trace aarch64-darwin.stdenv.cc aarch64-darwin.stdenv.cc}/bin/${aarch64-darwin.stdenv.cc.targetPrefix}cc";
-            CARGO_BUILD_RUSTFLAGS = with pkgs.pkgsCross; [ "-C" "linker=${TARGET_CC}" ];
+            TARGET_CC = with pkgs.pkgsCross; "${aarch64-darwin.stdenv.cc}/bin/cc";
+            CARGO_BUILD_RUSTFLAGS = with pkgs.pkgsCross; [ "-C" "linker=${builtins.trace "${aarch64-darwin.stdenv.cc}/bin" TARGET_CC}" ];
             postInstall = ''
               cd $out/bin
               mkdir -p {man,completions}
