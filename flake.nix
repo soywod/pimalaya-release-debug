@@ -115,7 +115,8 @@
             '';
           };
           aarch64-apple-darwin = pkgs: rec {
-            inherit (x86_64-apple-darwin pkgs) buildInputs NIX_LDFLAGS;
+            buildInputs = with pkgs; [ zip pkgsCross.darwin.apple_sdk.frameworks.Cocoa ];
+            NIX_LDFLAGS = with pkgs.pkgsCross.darwin.apple_sdk.frameworks; "-F${AppKit}/Library/Frameworks -framework AppKit";
             TARGET_CC = with pkgs.pkgsCross.aarch64-darwin; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
             CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
             postInstall = ''
