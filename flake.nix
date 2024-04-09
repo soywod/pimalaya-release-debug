@@ -98,9 +98,9 @@
           };
         };
         x86_64-darwin = rec {
-          x86_64-apple-darwin = pkgs: (with pkgs.darwin.apple_sdk.frameworks; {
-            buildInputs = [ zip Cocoa ];
-            NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+          x86_64-apple-darwin = pkgs: {
+            buildInputs = with pkgs; [ zip darwin.apple_sdk.frameworks.Cocoa ];
+            NIX_LDFLAGS = with pkgs.darwin.apple_sdk.frameworks; "-F${AppKit}/Library/Frameworks -framework AppKit";
             postInstall = ''
               cd $out/bin
               mkdir -p {man,completions}
@@ -113,7 +113,7 @@
               tar -czf neverest.tgz neverest man completions
               zip -r neverest.zip neverest man completions
             '';
-          });
+          };
           aarch64-apple-darwin = pkgs: {
             inherit (x86_64-apple-darwin pkgs) buildInputs NIX_LDFLAGS;
             postInstall = ''
