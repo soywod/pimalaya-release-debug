@@ -114,8 +114,10 @@
               zip -r neverest.zip neverest man completions
             '';
           };
-          aarch64-apple-darwin = pkgs: {
+          aarch64-apple-darwin = pkgs: rec {
             inherit (x86_64-apple-darwin pkgs) buildInputs NIX_LDFLAGS;
+            TARGET_CC = with pkgs.pkgsCross.aarch64-multiplatform; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
             postInstall = ''
               cd $out/bin
               mkdir -p {man,completions}
