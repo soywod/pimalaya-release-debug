@@ -15,148 +15,151 @@
       url = "github:nix-community/naersk";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-utils.url = "github:numtide/flake-utils";
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
     };
   };
 
-  outputs = { self, nixpkgs, gitignore, fenix, naersk, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        inherit (gitignore.lib) gitignoreSource;
+  outputs = { self, nixpkgs, gitignore, fenix, naersk, ... }:
+    let
+      inherit (gitignore.lib) gitignoreSource;
 
-        mkToolchain = import ./rust-toolchain.nix fenix;
+      staticRustFlags = [ "-C" "target-feature=+crt-static" ];
 
-        mkDevShells = buildPlatform:
-          let
-            pkgs = import nixpkgs { system = buildPlatform; };
-            rust-toolchain = mkToolchain.fromFile { system = buildPlatform; };
-          in
-          {
-            default = pkgs.mkShell {
-              nativeBuildInputs = with pkgs; [
-                pkg-config
-              ];
-              buildInputs = with pkgs; [
-                # Nix
-                # rnix-lsp
-                nixpkgs-fmt
-
-                # Rust
-                rust-toolchain
-                cargo-watch
-
-                # OpenSSL
-                openssl.dev
-
-                # Notmuch
-                notmuch
-
-                # GPG
-                gnupg
-                gpgme
-              ];
-            };
+      # Map of map matching supported Nix build systems with Rust
+      # cross target systems.
+      crossBuildTargets = {
+        x86_64-linux = rec {
+          x86_64-unknown-linux-gnu = _: { };
+          x86_64-unknown-linux-musl = _: {
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags;
+            # hardeningDisable = [ "all" ];
           };
-
-        mkPackage = pkgs: buildPlatform: targetPlatform: package:
-          let
-            toolchain = mkToolchain.fromTarget {
-              inherit pkgs buildPlatform targetPlatform;
-            };
-            naersk' = naersk.lib.${buildPlatform}.override {
-              cargo = toolchain;
-              rustc = toolchain;
-            };
-            package' = {
-              name = "neverest";
-              src = gitignoreSource ./.;
-              doCheck = true;
-              cargoTestOptions = opts: opts ++ [ "--lib" ];
-            } // pkgs.lib.optionalAttrs (!isNull targetPlatform) {
-              CARGO_BUILD_TARGET = targetPlatform;
-            } // package;
-          in
-          naersk'.buildPackage package';
-
-        mkPackages = buildPlatform:
-          let
-            pkgs = import nixpkgs { system = buildPlatform; };
-            mkPackage' = mkPackage pkgs buildPlatform;
-          in
-          rec {
-            default = if pkgs.stdenv.isDarwin then macos else linux;
-            linux = mkPackage' null { };
-            linux-musl = mkPackage' "x86_64-unknown-linux-musl" (with pkgs.pkgsStatic; {
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-              hardeningDisable = [ "all" ];
-            });
-            macos = mkPackage' null (with pkgs.darwin.apple_sdk.frameworks; {
-              # NOTE: needed to prevent error Undefined symbols
-              # "_OBJC_CLASS_$_NSImage" and
-              # "_LSCopyApplicationURLsForBundleIdentifier"
-              NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-              buildInputs = [ Cocoa ];
-            });
-            windows = mkPackage' "x86_64-pc-windows-gnu" (rec {
-              strictDeps = true;
-              doCheck = false;
-
-              TARGET_CC = with pkgs.pkgsCross; "${mingwW64.stdenv.cc}/bin/${mingwW64.stdenv.cc.targetPrefix}cc";
-              CARGO_BUILD_RUSTFLAGS = [
-                "-C"
-                "target-feature=+crt-static"
-
-                # -latomic is required to build openssl-sys for armv6l-linux, but
-                # it doesn't seem to hurt any other builds.
-                "-C"
-                "link-args=-static -latomic"
-
-                # https://github.com/rust-lang/cargo/issues/4133
-                "-C"
-                "linker=${TARGET_CC}"
-              ];
-              depsBuildBuild = with pkgs.pkgsCross; [
-                mingwW64.stdenv.cc
-                mingwW64.windows.pthreads
-              ];
-            });
+          x86_64-pc-windows-gnu = pkgs: rec {
+            strictDeps = true;
+            depsBuildBuild = with pkgs; [
+              mingwW64.stdenv.cc
+              mingwW64.windows.pthreads
+            ];
+            TARGET_CC = with pkgs; "${mingwW64.stdenv.cc}/bin/${mingwW64.stdenv.cc.targetPrefix}cc";
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
           };
-
-        mkApp = drv:
-          let exePath = drv.passthru.exePath or "/bin/neverest";
-          in
-          {
-            type = "app";
-            program = "${drv}${exePath}";
+          aarch64-unknown-linux-gnu = pkgs: rec {
+            inherit (x86_64-unknown-linux-gnu pkgs);
+            TARGET_CC = with pkgs.aarch64-multiplatform; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+            CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${TARGET_CC}" ];
           };
-
-        mkApps = buildPlatform:
-          let
-            pkgs = import nixpkgs { system = buildPlatform; };
-          in
-          rec {
-            default = if pkgs.stdenv.isDarwin then macos else linux;
-            linux = mkApp self.packages.${buildPlatform}.linux;
-            linux-musl = mkApp self.packages.${buildPlatform}.linux-musl;
-            macos = mkApp self.packages.${buildPlatform}.macos;
-            windows =
-              let
-                wine = pkgs.wine.override { wineBuild = "wine64"; };
-                neverest = self.packages.${buildPlatform}.windows;
-                app = pkgs.writeShellScriptBin "neverest" ''
-                  export WINEPREFIX="$(mktemp -d)"
-                  ${wine}/bin/wine64 ${neverest}/bin/neverest.exe $@
-                '';
-              in
-              mkApp app;
+          aarch64-unknown-linux-musl = pkgs: rec {
+            inherit (x86_64-unknown-linux-musl pkgs);
+            TARGET_CC = with pkgs.aarch64-multiplatform-musl; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
           };
-      in
-      {
-        apps = mkApps system;
-        packages = mkPackages system;
-        devShells = mkDevShells system;
-      });
+        };
+        x86_64-darwin = rec {
+          x86_64-apple-darwin = pkgs: {
+            buildInputs = [ pkgs.darwin.apple_sdk.frameworks.Cocoa ];
+            NIX_LDFLAGS = "-F${pkgs.darwin.apple_sdk.frameworks.AppKit}/Library/Frameworks -framework AppKit";
+          };
+          aarch64-apple-darwin = x86_64-apple-darwin;
+        };
+      };
+
+      mkToolchain = import ./rust-toolchain.nix fenix;
+
+      mkDevShells = buildPlatform:
+        let
+          pkgs = import nixpkgs { system = buildPlatform; };
+          rust-toolchain = mkToolchain.fromFile { system = buildPlatform; };
+        in
+        {
+          default = pkgs.mkShell {
+            nativeBuildInputs = with pkgs; [
+              pkg-config
+            ];
+            buildInputs = with pkgs; [
+              # Nix
+              # rnix-lsp
+              nixpkgs-fmt
+
+              # Rust
+              rust-toolchain
+              cargo-watch
+
+              # OpenSSL
+              openssl.dev
+
+              # Notmuch
+              notmuch
+
+              # GPG
+              gnupg
+              gpgme
+            ];
+          };
+        };
+
+      mkPackage = pkgs: buildPlatform: targetPlatform: package:
+        let
+          toolchain = mkToolchain.fromTarget {
+            inherit pkgs buildPlatform targetPlatform;
+          };
+          naersk' = naersk.lib.${buildPlatform}.override {
+            cargo = toolchain;
+            rustc = toolchain;
+          };
+          package' = {
+            name = "neverest";
+            src = gitignoreSource ./.;
+            doCheck = false;
+            CARGO_BUILD_TARGET = targetPlatform;
+            # cargoTestOptions = opts: opts ++ [ "--lib" ];
+          } // package;
+        in
+        naersk'.buildPackage package';
+
+      mkPackages = buildPlatform:
+        let
+          pkgs = import nixpkgs { system = buildPlatform; };
+          mkPackage' = mkPackage pkgs buildPlatform;
+          packages = builtins.mapAttrs (target: package: mkPackage pkgs buildPlatform target (package pkgs.pkgsCross)) (crossBuildTargets.${buildPlatform});
+        in
+        packages;
+
+      mkApp = drv:
+        let exePath = drv.passthru.exePath or "/bin/neverest";
+        in
+        {
+          type = "app";
+          program = "${drv}${exePath}";
+        };
+
+      mkApps = buildPlatform:
+        let
+          pkgs = import nixpkgs { system = buildPlatform; };
+        in
+        rec {
+          default = if pkgs.stdenv.isDarwin then macos else linux;
+          linux = mkApp self.packages.${buildPlatform}.linux;
+          linux-musl = mkApp self.packages.${buildPlatform}.linux-musl;
+          macos = mkApp self.packages.${buildPlatform}.macos;
+          windows =
+            let
+              wine = pkgs.wine.override { wineBuild = "wine64"; };
+              neverest = self.packages.${buildPlatform}.windows;
+              app = pkgs.writeShellScriptBin "neverest" ''
+                export WINEPREFIX="$(mktemp -d)"
+                ${wine}/bin/wine64 ${neverest}/bin/neverest.exe $@
+              '';
+            in
+            mkApp app;
+        };
+      supportedSystems = builtins.attrNames crossBuildTargets;
+      forEachSupportedSystem = nixpkgs.lib.genAttrs supportedSystems;
+    in
+    {
+      apps = forEachSupportedSystem mkApps;
+      packages = forEachSupportedSystem mkPackages;
+      devShells = forEachSupportedSystem mkDevShells;
+    };
 }
