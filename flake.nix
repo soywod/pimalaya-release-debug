@@ -31,37 +31,104 @@
       # cross target systems.
       crossBuildTargets = {
         x86_64-linux = rec {
-          x86_64-unknown-linux-gnu = _: { };
-          x86_64-unknown-linux-musl = _: {
+          x86_64-unknown-linux-gnu = pkgs: {
+            buildInputs = with pkgs; [ zip ];
+            postInstall = ''
+              cd $out/bin
+              mkdir -p {man,completions}
+              ./neverest man ./man
+              ./neverest completion bash > ./completions/neverest.bash
+              ./neverest completion elvish > ./completions/neverest.elvish
+              ./neverest completion fish > ./completions/neverest.fish
+              ./neverest completion powershell > ./completions/neverest.powershell
+              ./neverest completion zsh > ./completions/neverest.zsh
+              tar -czf neverest.tgz neverest man completions
+              zip -r neverest.zip neverest man completions
+            '';
+          };
+          x86_64-unknown-linux-musl = pkgs: {
+            inherit (x86_64-unknown-linux-gnu pkgs) buildInputs postInstall;
             CARGO_BUILD_RUSTFLAGS = staticRustFlags;
-            # hardeningDisable = [ "all" ];
           };
           x86_64-pc-windows-gnu = pkgs: rec {
             strictDeps = true;
             depsBuildBuild = with pkgs; [
-              mingwW64.stdenv.cc
-              mingwW64.windows.pthreads
+              (wine.override { wineBuild = "wine64"; })
+              zip
+              pkgsCross.mingwW64.stdenv.cc
+              pkgsCross.mingwW64.windows.pthreads
             ];
-            TARGET_CC = with pkgs; "${mingwW64.stdenv.cc}/bin/${mingwW64.stdenv.cc.targetPrefix}cc";
+            TARGET_CC = with pkgs.pkgsCross; "${mingwW64.stdenv.cc}/bin/${mingwW64.stdenv.cc.targetPrefix}cc";
             CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
+            postInstall = ''
+              cd $out/bin
+              mkdir -p {man,completions}
+              export WINEPREFIX="$(mktemp -d)"
+              wine64 ./neverest.exe man ./man
+              wine64 ./neverest.exe completion bash > ./completions/neverest.bash
+              wine64 ./neverest.exe completion elvish > ./completions/neverest.elvish
+              wine64 ./neverest.exe completion fish > ./completions/neverest.fish
+              wine64 ./neverest.exe completion powershell > ./completions/neverest.powershell
+              wine64 ./neverest.exe completion zsh > ./completions/neverest.zsh
+              tar -czf neverest.tgz neverest.exe man completions
+              zip -r neverest.zip neverest.exe man completions
+            '';
           };
           aarch64-unknown-linux-gnu = pkgs: rec {
-            inherit (x86_64-unknown-linux-gnu pkgs);
-            TARGET_CC = with pkgs.aarch64-multiplatform; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+            buildInputs = with pkgs; [ qemu zip ];
+            TARGET_CC = with pkgs.pkgsCross.aarch64-multiplatform; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
             CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${TARGET_CC}" ];
+            postInstall = ''
+              cd $out/bin
+              mkdir -p {man,completions}
+              qemu-aarch64 ./neverest man ./man
+              qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+              qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+              qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+              qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+              qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+              tar -czf neverest.tgz neverest man completions
+              zip -r neverest.zip neverest man completions
+            '';
           };
           aarch64-unknown-linux-musl = pkgs: rec {
-            inherit (x86_64-unknown-linux-musl pkgs);
-            TARGET_CC = with pkgs.aarch64-multiplatform-musl; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+            inherit (aarch64-unknown-linux-gnu pkgs) buildInputs postInstall;
+            TARGET_CC = with pkgs.pkgsCross.aarch64-multiplatform-musl; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
             CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
           };
         };
         x86_64-darwin = rec {
-          x86_64-apple-darwin = pkgs: {
-            buildInputs = [ pkgs.darwin.apple_sdk.frameworks.Cocoa ];
-            NIX_LDFLAGS = "-F${pkgs.darwin.apple_sdk.frameworks.AppKit}/Library/Frameworks -framework AppKit";
+          x86_64-apple-darwin = pkgs: (with pkgs.darwin.apple_sdk.frameworks; {
+            buildInputs = [ zip Cocoa ];
+            NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+            postInstall = ''
+              cd $out/bin
+              mkdir -p {man,completions}
+              ./neverest man ./man
+              ./neverest completion bash > ./completions/neverest.bash
+              ./neverest completion elvish > ./completions/neverest.elvish
+              ./neverest completion fish > ./completions/neverest.fish
+              ./neverest completion powershell > ./completions/neverest.powershell
+              ./neverest completion zsh > ./completions/neverest.zsh
+              tar -czf neverest.tgz neverest man completions
+              zip -r neverest.zip neverest man completions
+            '';
+          });
+          aarch64-apple-darwin = pkgs: {
+            inherit (x86_64-apple-darwin pkgs) buildInputs NIX_LDFLAGS;
+            postInstall = ''
+              cd $out/bin
+              mkdir -p {man,completions}
+              qemu-aarch64 ./neverest man ./man
+              qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+              qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+              qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+              qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+              qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+              tar -czf neverest.tgz neverest man completions
+              zip -r neverest.zip neverest man completions
+            '';
           };
-          aarch64-apple-darwin = x86_64-apple-darwin;
         };
       };
 
@@ -113,7 +180,6 @@
             src = gitignoreSource ./.;
             doCheck = false;
             CARGO_BUILD_TARGET = targetPlatform;
-            # cargoTestOptions = opts: opts ++ [ "--lib" ];
           } // package;
         in
         naersk'.buildPackage package';
@@ -121,13 +187,13 @@
       mkPackages = buildPlatform:
         let
           pkgs = import nixpkgs { system = buildPlatform; };
-          mkPackage' = mkPackage pkgs buildPlatform;
-          packages = builtins.mapAttrs (target: package: mkPackage pkgs buildPlatform target (package pkgs.pkgsCross)) (crossBuildTargets.${buildPlatform});
+          packages = builtins.mapAttrs (target: package: mkPackage pkgs buildPlatform target (package pkgs)) (crossBuildTargets.${buildPlatform});
         in
         packages;
 
       mkApp = drv:
-        let exePath = drv.passthru.exePath or "/bin/neverest";
+        let
+          exePath = drv.passthru.exePath or "/bin/neverest";
         in
         {
           type = "app";
@@ -137,23 +203,9 @@
       mkApps = buildPlatform:
         let
           pkgs = import nixpkgs { system = buildPlatform; };
+          apps = builtins.mapAttrs (target: package: mkApp self.packages.${buildPlatform}.${target}) (crossBuildTargets.${buildPlatform});
         in
-        rec {
-          default = if pkgs.stdenv.isDarwin then macos else linux;
-          linux = mkApp self.packages.${buildPlatform}.linux;
-          linux-musl = mkApp self.packages.${buildPlatform}.linux-musl;
-          macos = mkApp self.packages.${buildPlatform}.macos;
-          windows =
-            let
-              wine = pkgs.wine.override { wineBuild = "wine64"; };
-              neverest = self.packages.${buildPlatform}.windows;
-              app = pkgs.writeShellScriptBin "neverest" ''
-                export WINEPREFIX="$(mktemp -d)"
-                ${wine}/bin/wine64 ${neverest}/bin/neverest.exe $@
-              '';
-            in
-            mkApp app;
-        };
+        apps;
       supportedSystems = builtins.attrNames crossBuildTargets;
       forEachSupportedSystem = nixpkgs.lib.genAttrs supportedSystems;
     in
