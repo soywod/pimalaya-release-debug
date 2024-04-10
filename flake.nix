@@ -2,7 +2,7 @@
   description = "CLI to synchronize and backup emails";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:reckenrode/nixpkgs/darwin-cross";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -27,34 +27,13 @@
 
       staticRustFlags = [ "-Ctarget-feature=+crt-static" ];
 
-      mkPkgsCross = buildSystem: crossSystem: import nixpkgs {
-        system = buildSystem;
-        crossSystem.config = crossSystem;
-      };
-
-      mkPostInstall = { pkgs, prefix ? "" }: with pkgs; ''
-        cd $out/bin
-        mkdir -p {man,completions}
-        ${prefix} ./neverest man ./man
-        ${prefix} ./neverest completion bash > ./completions/neverest.bash
-        ${prefix} ./neverest completion elvish > ./completions/neverest.elvish
-        ${prefix} ./neverest completion fish > ./completions/neverest.fish
-        ${prefix} ./neverest completion powershell > ./completions/neverest.powershell
-        ${prefix} ./neverest completion zsh > ./completions/neverest.zsh
-        tar -czf neverest.tgz neverest* man completions
-        ${zip}/bin/zip -r neverest.zip neverest* man completions
-      '';
-
       # Map of map matching supported Nix build systems with Rust
       # cross target systems.
       crossBuildTargets = {
         x86_64-linux = {
           x86_64-linux = {
             rustTarget = "x86_64-unknown-linux-musl";
-            override = { pkgs, ... }: with pkgs; {
-              CARGO_BUILD_RUSTFLAGS = staticRustFlags;
-              postInstall = mkPostInstall { inherit pkgs; };
-            };
+            override = { ... }: { };
           };
 
           arm64-linux = rec {
@@ -68,7 +47,7 @@
                 CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
                 postInstall = mkPostInstall {
                   inherit pkgs;
-                  prefix = "${pkgs.qemu}/bin/qemu-aarch64";
+                  bin = "${pkgs.qemu}/bin/qemu-aarch64 ./neverest";
                 };
               };
           };
@@ -83,7 +62,7 @@
                 wine = pkgs.wine.override { wineBuild = "wine64"; };
                 postInstall = mkPostInstall {
                   inherit pkgs;
-                  prefix = "${wine}/bin/wine64";
+                  bin = "${wine}/bin/wine64 ./neverest.exe";
                 };
               in
               {
@@ -106,8 +85,6 @@
               {
                 buildInputs = [ Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-                CARGO_BUILD_RUSTFLAGS = staticRustFlags;
-                postInstall = mkPostInstall { inherit pkgs; };
               };
           };
 
@@ -128,7 +105,7 @@
                 CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
                 postInstall = mkPostInstall {
                   inherit pkgs;
-                  prefix = "${pkgs.qemu}/bin/qemu-aarch64";
+                  bin = "${pkgs.qemu}/bin/qemu-aarch64 ./neverest";
                 };
               };
           };
@@ -137,6 +114,24 @@
 
       mkToolchain = import ./rust-toolchain.nix fenix;
 
+      mkPkgsCross = buildSystem: crossSystem: import nixpkgs {
+        system = buildSystem;
+        crossSystem.config = crossSystem;
+      };
+
+      mkPostInstall = { pkgs, bin ? "./neverest" }: with pkgs; ''
+        cd $out/bin
+        mkdir -p {man,completions}
+        ${bin} man ./man
+        ${bin} completion bash > ./completions/neverest.bash
+        ${bin} completion elvish > ./completions/neverest.elvish
+        ${bin} completion fish > ./completions/neverest.fish
+        ${bin} completion powershell > ./completions/neverest.powershell
+        ${bin} completion zsh > ./completions/neverest.zsh
+        tar -czf neverest.tgz neverest* man completions
+        ${zip}/bin/zip -r neverest.zip neverest* man completions
+      '';
+
       mkDevShells = buildPlatform:
         let
           pkgs = import nixpkgs { system = buildPlatform; };
@@ -144,9 +139,7 @@
         in
         {
           default = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [
-              pkg-config
-            ];
+            nativeBuildInputs = with pkgs; [ pkg-config ];
             buildInputs = with pkgs; [
               # Nix
               # rnix-lsp
@@ -156,15 +149,8 @@
               rust-toolchain
               cargo-watch
 
-              # OpenSSL
-              openssl.dev
-
               # Notmuch
               notmuch
-
-              # GPG
-              gnupg
-              gpgme
             ];
           };
         };
@@ -185,6 +171,8 @@
             auditable = false;
             strictDeps = true;
             CARGO_BUILD_TARGET = targetPlatform;
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags;
+            postInstall = mkPostInstall { inherit pkgs; };
           } // package;
         in
         naersk'.buildPackage package';
@@ -192,18 +180,12 @@
       mkPackages = system:
         let
           pkgs = import nixpkgs { inherit system; };
-          packages = builtins.mapAttrs
-            (target: package: mkPackage pkgs system package.rustTarget (package.override {
-              inherit system pkgs;
-            }))
-            (crossBuildTargets.${system});
+          mkPackage' = target: package: mkPackage pkgs system package.rustTarget (package.override { inherit system pkgs; });
         in
-        packages;
+        builtins.mapAttrs mkPackage crossBuildTargets.${system};
 
       mkApp = drv:
-        let
-          exePath = drv.passthru.exePath or "/bin/neverest";
-        in
+        let exePath = drv.passthru.exePath or "/bin/neverest"; in
         {
           type = "app";
           program = "${drv}${exePath}";
@@ -212,15 +194,16 @@
       mkApps = buildPlatform:
         let
           pkgs = import nixpkgs { system = buildPlatform; };
-          apps = builtins.mapAttrs (target: package: mkApp self.packages.${buildPlatform}.${target}) (crossBuildTargets.${buildPlatform});
+          mkApp' = target: package: mkApp self.packages.${buildPlatform}.${target};
         in
-        apps;
+        builtins.mapAttrs mkApp' crossBuildTargets.${buildPlatform};
+
       supportedSystems = builtins.attrNames crossBuildTargets;
-      forEachSupportedSystem = nixpkgs.lib.genAttrs supportedSystems;
+      mapSupportedSystem = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
-      apps = forEachSupportedSystem mkApps;
-      packages = forEachSupportedSystem mkPackages;
-      devShells = forEachSupportedSystem mkDevShells;
+      apps = mapSupportedSystem mkApps;
+      packages = mapSupportedSystem mkPackages;
+      devShells = mapSupportedSystem mkDevShells;
     };
 }
