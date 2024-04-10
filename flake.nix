@@ -25,7 +25,7 @@
     let
       inherit (gitignore.lib) gitignoreSource;
 
-      staticRustFlags = [ "-C" "target-feature=+crt-static" ];
+      staticRustFlags = [ "-Ctarget-feature=+crt-static" ];
 
       mkPkgsCross = buildSystem: crossSystem: import nixpkgs {
         system = buildSystem;
@@ -38,8 +38,12 @@
         x86_64-linux = {
           x86_64-linux = {
             rustTarget = "x86_64-unknown-linux-musl";
-            override = { pkgs, ... }: {
-              CARGO_BUILD_RUSTFLAGS = staticRustFlags;
+            override = { pkgs, ... }: with pkgs; {
+              buildInputs = [ clang ];
+              CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [
+                "-Clinker=${clang}/bin/clang"
+                "-Clink-arg=-fuse-ld=${clang}/bin/ld"
+              ];
               postInstall = with pkgs; ''
                 cd $out/bin
                 mkdir -p {man,completions}
@@ -58,10 +62,14 @@
           arm64-linux = rec {
             rustTarget = "aarch64-unknown-linux-musl";
             override = { system, pkgs }:
-              let inherit (mkPkgsCross system rustTarget) stdenv; in
+              let inherit (mkPkgsCross system rustTarget) clang; in
               rec {
-                TARGET_CC = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
-                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
+                buildInputs = [ clang ];
+                TARGET_CC = "${clang}/bin/clang";
+                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [
+                  "-Clinker=${clang}/bin/clang"
+                  "-Clink-arg=-fuse-ld=${clang}/bin/ld"
+                ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -82,12 +90,15 @@
             override = { system, pkgs }:
               let
                 inherit (pkgs.pkgsCross.mingwW64) stdenv windows;
+                cc = "${clang}/bin/clang";
+                ld = "${clang}/bin/ld";
                 wine = pkgs.wine.override { wineBuild = "wine64"; };
               in
               rec {
-                depsBuildBuild = [ stdenv.cc windows.pthreads ];
-                TARGET_CC = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
-                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
+                depsBuildBuild = [ clang windows.pthreads ];
+                TARGET_CC = cc;
+                TARGET_LD = ld;
+                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${cc}" "-Clink-arg=-fuse-ld=${ld}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -109,10 +120,20 @@
           x86_64-macos = {
             rustTarget = "x86_64-apple-darwin";
             override = { pkgs, ... }:
-              let inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa; in
+              let
+                inherit (pkgs) clang darwin;
+                inherit (darwin.apple_sdk.frameworks) AppKit Cocoa;
+                cc = "${clang}/bin/clang";
+                ld = "${clang}/bin/ld";
+              in
               {
-                buildInputs = [ Cocoa ];
+                buildInputs = [ clang Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+                CC = cc;
+                LD = ld;
+                TARGET_CC = cc;
+                TARGET_LD = ld;
+                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${cc}" "-Clink-arg=-fuse-ld=${ld}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -132,16 +153,19 @@
             rustTarget = "aarch64-apple-darwin";
             override = { system, pkgs }:
               let
+                inherit (mkPkgsCross system "aarch64-darwin") clang;
                 inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
-                inherit (mkPkgsCross system "aarch64-darwin") stdenv;
-                targetCc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc"; in
-              {
-                buildInputs = [ Cocoa ];
+                cc = "${clang}/bin/clang";
+                ld = "${clang}/bin/ld";
+              in
+              rec {
+                buildInputs = [ clang Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-                TARGET_CC = targetCc;
-                CC = targetCc;
-                LD = targetCc;
-                # CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${targetCc}" ];
+                CC = cc;
+                LD = ld;
+                TARGET_CC = cc;
+                TARGET_LD = ld;
+                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${cc}" "-Clink-arg=-fuse-ld=${ld}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
