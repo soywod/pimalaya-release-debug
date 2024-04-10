@@ -25,7 +25,7 @@
     let
       inherit (gitignore.lib) gitignoreSource;
 
-      staticRustFlags = [ "-C" "target-feature=+crt-static" ];
+      staticRustFlags = [ "-Ctarget-feature=+crt-static" ];
 
       mkPkgsCross = buildSystem: crossSystem: import nixpkgs {
         system = buildSystem;
@@ -38,8 +38,12 @@
         x86_64-linux = {
           x86_64-linux = {
             rustTarget = "x86_64-unknown-linux-musl";
-            override = { pkgs, ... }: {
-              CARGO_BUILD_RUSTFLAGS = staticRustFlags;
+            override = { pkgs, ... }: with pkgs; {
+              buildInputs = [ clang lld ];
+              CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [
+                "-Clinker=${clang}/bin/clang"
+                "-Clink-arg=-fuse-ld=${lld}/bin/lld"
+              ];
               postInstall = with pkgs; ''
                 cd $out/bin
                 mkdir -p {man,completions}
@@ -136,12 +140,13 @@
                 inherit (mkPkgsCross system "aarch64-darwin") stdenv;
                 targetCc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc"; in
               {
-                buildInputs = [ Cocoa ];
+                buildInputs = with pkgs; [ zld Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-                TARGET_CC = targetCc;
-                CC = targetCc;
-                LD = targetCc;
+                # TARGET_CC = targetCc;
+                # CC = targetCc;
+                # LD = targetCc;
                 # CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${targetCc}" ];
+                CARGO_BUILD_RUSTFLAGS = with pkgs; [ "-Clink-arg=-fuse-ld=${zld}/bin/zld" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
