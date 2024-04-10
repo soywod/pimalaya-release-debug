@@ -39,9 +39,8 @@
           x86_64-linux = {
             rustTarget = "x86_64-unknown-linux-musl";
             override = { pkgs, ... }: {
-              buildInputs = with pkgs; [ zip ];
               CARGO_BUILD_RUSTFLAGS = staticRustFlags;
-              postInstall = ''
+              postInstall = with pkgs; ''
                 cd $out/bin
                 mkdir -p {man,completions}
                 ./neverest man ./man
@@ -51,7 +50,7 @@
                 ./neverest completion powershell > ./completions/neverest.powershell
                 ./neverest completion zsh > ./completions/neverest.zsh
                 tar -czf neverest.tgz neverest man completions
-                zip -r neverest.zip neverest man completions
+                ${zip}/bin/zip -r neverest.zip neverest man completions
               '';
             };
           };
@@ -61,20 +60,19 @@
             override = { system, pkgs }:
               let inherit (mkPkgsCross system rustTarget) stdenv; in
               rec {
-                buildInputs = with pkgs; [ qemu zip ];
                 TARGET_CC = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
                 CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
-                postInstall = ''
+                postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
-                  qemu-aarch64 ./neverest man ./man
-                  qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
-                  qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
-                  qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
-                  qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
-                  qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+                  ${qemu}/bin/qemu-aarch64 ./neverest man ./man
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
                   tar -czf neverest.tgz neverest man completions
-                  zip -r neverest.zip neverest man completions
+                  ${zip}/bin/zip -r neverest.zip neverest man completions
                 '';
               };
           };
@@ -87,21 +85,21 @@
                 wine = pkgs.wine.override { wineBuild = "wine64"; };
               in
               rec {
-                depsBuildBuild = with pkgs; [ zip wine stdenv.cc windows.pthreads ];
+                depsBuildBuild = [ stdenv.cc windows.pthreads ];
                 TARGET_CC = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
                 CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
-                postInstall = ''
+                postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
                   export WINEPREFIX="$(mktemp -d)"
-                  wine64 ./neverest.exe man ./man
-                  wine64 ./neverest.exe completion bash > ./completions/neverest.bash
-                  wine64 ./neverest.exe completion elvish > ./completions/neverest.elvish
-                  wine64 ./neverest.exe completion fish > ./completions/neverest.fish
-                  wine64 ./neverest.exe completion powershell > ./completions/neverest.powershell
-                  wine64 ./neverest.exe completion zsh > ./completions/neverest.zsh
+                  ${wine}/bin/wine64 ./neverest.exe man ./man
+                  ${wine}/bin/wine64 ./neverest.exe completion bash > ./completions/neverest.bash
+                  ${wine}/bin/wine64 ./neverest.exe completion elvish > ./completions/neverest.elvish
+                  ${wine}/bin/wine64 ./neverest.exe completion fish > ./completions/neverest.fish
+                  ${wine}/bin/wine64 ./neverest.exe completion powershell > ./completions/neverest.powershell
+                  ${wine}/bin/wine64 ./neverest.exe completion zsh > ./completions/neverest.zsh
                   tar -czf neverest.tgz neverest.exe man completions
-                  zip -r neverest.zip neverest.exe man completions
+                  ${zip}/bin/zip -r neverest.zip neverest.exe man completions
                 '';
               };
           };
@@ -110,46 +108,50 @@
         x86_64-darwin = {
           x86_64-macos = {
             rustTarget = "x86_64-apple-darwin";
-            override = { pkgs, ... }: with pkgs; {
-              buildInputs = [ zip darwin.apple_sdk.frameworks.Cocoa ];
-              NIX_LDFLAGS = with darwin.apple_sdk.frameworks; "-F${AppKit}/Library/Frameworks -framework AppKit";
-              postInstall = ''
-                cd $out/bin
-                mkdir -p {man,completions}
-                ./neverest man ./man
-                ./neverest completion bash > ./completions/neverest.bash
-                ./neverest completion elvish > ./completions/neverest.elvish
-                ./neverest completion fish > ./completions/neverest.fish
-                ./neverest completion powershell > ./completions/neverest.powershell
-                ./neverest completion zsh > ./completions/neverest.zsh
-                tar -czf neverest.tgz neverest man completions
-                zip -r neverest.zip neverest man completions
-              '';
-            };
+            override = { pkgs, ... }:
+              let inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa; in
+              {
+                buildInputs = [ Cocoa ];
+                NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+                postInstall = with pkgs; ''
+                  cd $out/bin
+                  mkdir -p {man,completions}
+                  ./neverest man ./man
+                  ./neverest completion bash > ./completions/neverest.bash
+                  ./neverest completion elvish > ./completions/neverest.elvish
+                  ./neverest completion fish > ./completions/neverest.fish
+                  ./neverest completion powershell > ./completions/neverest.powershell
+                  ./neverest completion zsh > ./completions/neverest.zsh
+                  tar -czf neverest.tgz neverest man completions
+                  ${zip}/bin/zip -r neverest.zip neverest man completions
+                '';
+              };
           };
 
           arm64-macos = {
             rustTarget = "aarch64-apple-darwin";
             override = { system, pkgs }:
-              let inherit (mkPkgsCross system "aarch64-darwin") stdenv; in
+              let
+                inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
+                inherit (mkPkgsCross system "aarch64-darwin") stdenv; in
               rec {
-                buildInputs = with pkgs; [ zip darwin.apple_sdk.frameworks.Cocoa ];
-                NIX_LDFLAGS = with pkgs; "-F${darwin.apple_sdk.frameworks.AppKit}/Library/Frameworks -framework AppKit";
+                buildInputs = [ Cocoa ];
+                NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
                 TARGET_CC = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
                 CC = TARGET_CC;
                 LD = TARGET_CC;
                 CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${TARGET_CC}" ];
-                postInstall = ''
+                postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
-                  qemu-aarch64 ./neverest man ./man
-                  qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
-                  qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
-                  qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
-                  qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
-                  qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+                  ${qemu}/bin/qemu-aarch64 ./neverest man ./man
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
                   tar -czf neverest.tgz neverest man completions
-                  zip -r neverest.zip neverest man completions
+                  ${zip}/bin/zip -r neverest.zip neverest man completions
                 '';
               };
           };
