@@ -117,6 +117,7 @@
               {
                 buildInputs = [ Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+                CARGO_BUILD_RUSTFLAGS = staticRustFlags;
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -137,7 +138,8 @@
             rustTarget = "aarch64-apple-darwin";
             override = { system, pkgs }:
               let
-                inherit (mkPkgsCross system "aarch64-darwin") stdenv;
+                # inherit (mkPkgsCross system "aarch64-darwin") stdenv;
+                inherit ((mkPkgsCross system "aarch64-darwin").pkgsStatic) stdenv;
                 inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
                 cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
               in
