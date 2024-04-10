@@ -61,7 +61,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: neverest.tgz
-          asset_name: neverest.${{ matrix.name }}.tgz
+          asset_name: neverest.${{ matrix.target }}.tgz
           asset_content_type: application/gzip
       - name: Upload zip release archive
         uses: actions/upload-release-asset@v1
@@ -70,5 +70,5 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: neverest.zip
-          asset_name: neverest.${{ matrix.name }}.zip
+          asset_name: neverest.${{ matrix.target }}.zip
           asset_content_type: application/zip

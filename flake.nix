@@ -132,34 +132,34 @@
               };
           };
 
-          # FIXME: infinite recursion?!
-          # arm64-macos = {
-          #   rustTarget = "aarch64-apple-darwin";
-          #   override = { system, pkgs }:
-          #     let
-          #       inherit (mkPkgsCross system "aarch64-darwin") stdenv;
-          #       inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
-          #       cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
-          #     in
-          #     rec {
-          #       buildInputs = [ Cocoa ];
-          #       NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-          #       TARGET_CC = cc;
-          #       CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
-          #       postInstall = with pkgs; ''
-          #         cd $out/bin
-          #         mkdir -p {man,completions}
-          #         ${qemu}/bin/qemu-aarch64 ./neverest man ./man
-          #         ${qemu}/bin/qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
-          #         ${qemu}/bin/qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
-          #         ${qemu}/bin/qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
-          #         ${qemu}/bin/qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
-          #         ${qemu}/bin/qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
-          #         tar -czf neverest.tgz neverest man completions
-          #         ${zip}/bin/zip -r neverest.zip neverest man completions
-          #       '';
-          #     };
-          # };
+          # FIXME: infinite recursion in stdenv?!
+          arm64-macos = {
+            rustTarget = "aarch64-apple-darwin";
+            override = { system, pkgs }:
+              let
+                inherit (mkPkgsCross system "aarch64-darwin") stdenv;
+                inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
+                cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+              in
+              rec {
+                buildInputs = [ Cocoa ];
+                NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+                TARGET_CC = cc;
+                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
+                postInstall = with pkgs; ''
+                  cd $out/bin
+                  mkdir -p {man,completions}
+                  ${qemu}/bin/qemu-aarch64 ./neverest man ./man
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+                  ${qemu}/bin/qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+                  tar -czf neverest.tgz neverest man completions
+                  ${zip}/bin/zip -r neverest.zip neverest man completions
+                '';
+              };
+          };
         };
       };
 
