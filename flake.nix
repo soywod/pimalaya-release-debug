@@ -39,11 +39,7 @@
           x86_64-linux = {
             rustTarget = "x86_64-unknown-linux-musl";
             override = { pkgs, ... }: with pkgs; {
-              buildInputs = [ clang ];
-              CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [
-                "-Clinker=${clang}/bin/clang"
-                "-Clink-arg=-fuse-ld=${clang}/bin/ld"
-              ];
+              CARGO_BUILD_RUSTFLAGS = staticRustFlags;
               postInstall = with pkgs; ''
                 cd $out/bin
                 mkdir -p {man,completions}
@@ -62,14 +58,12 @@
           arm64-linux = rec {
             rustTarget = "aarch64-unknown-linux-musl";
             override = { system, pkgs }:
-              let inherit (mkPkgsCross system rustTarget) clang; in
+              let
+                inherit (mkPkgsCross system rustTarget) stdenv;
+                cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc"; in
               rec {
-                buildInputs = [ clang ];
-                TARGET_CC = "${clang}/bin/clang";
-                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [
-                  "-Clinker=${clang}/bin/clang"
-                  "-Clink-arg=-fuse-ld=${clang}/bin/ld"
-                ];
+                TARGET_CC = cc;
+                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -89,16 +83,15 @@
             rustTarget = "x86_64-pc-windows-gnu";
             override = { system, pkgs }:
               let
-                inherit (pkgs.pkgsCross.mingwW64) clang windows;
-                cc = "${clang}/bin/clang";
-                ld = "${clang}/bin/ld";
+                inherit (pkgs) pkgsCross zip;
+                inherit (pkgsCross.mingwW64) stdenv windows;
+                cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
                 wine = pkgs.wine.override { wineBuild = "wine64"; };
               in
-              rec {
-                depsBuildBuild = [ clang windows.pthreads ];
+              {
+                depsBuildBuild = [ stdenv.cc windows.pthreads ];
                 TARGET_CC = cc;
-                TARGET_LD = ld;
-                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${cc}" "-Clink-arg=-fuse-ld=${ld}" ];
+                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -120,20 +113,10 @@
           x86_64-macos = {
             rustTarget = "x86_64-apple-darwin";
             override = { pkgs, ... }:
-              let
-                inherit (pkgs) clang darwin;
-                inherit (darwin.apple_sdk.frameworks) AppKit Cocoa;
-                cc = "${clang}/bin/clang";
-                ld = "${clang}/bin/ld";
-              in
+              let inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa; in
               {
-                buildInputs = [ clang Cocoa ];
+                buildInputs = [ Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-                CC = cc;
-                LD = ld;
-                TARGET_CC = cc;
-                TARGET_LD = ld;
-                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${cc}" "-Clink-arg=-fuse-ld=${ld}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
@@ -149,37 +132,34 @@
               };
           };
 
-          arm64-macos = {
-            rustTarget = "aarch64-apple-darwin";
-            override = { system, pkgs }:
-              let
-                inherit (mkPkgsCross system "aarch64-darwin") clang;
-                inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
-                cc = "${clang}/bin/clang";
-                ld = "${clang}/bin/ld";
-              in
-              rec {
-                buildInputs = [ clang Cocoa ];
-                NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-                CC = cc;
-                LD = ld;
-                TARGET_CC = cc;
-                TARGET_LD = ld;
-                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${cc}" "-Clink-arg=-fuse-ld=${ld}" ];
-                postInstall = with pkgs; ''
-                  cd $out/bin
-                  mkdir -p {man,completions}
-                  ${qemu}/bin/qemu-aarch64 ./neverest man ./man
-                  ${qemu}/bin/qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
-                  ${qemu}/bin/qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
-                  ${qemu}/bin/qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
-                  ${qemu}/bin/qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
-                  ${qemu}/bin/qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
-                  tar -czf neverest.tgz neverest man completions
-                  ${zip}/bin/zip -r neverest.zip neverest man completions
-                '';
-              };
-          };
+          # FIXME: infinite recursion?!
+          # arm64-macos = {
+          #   rustTarget = "aarch64-apple-darwin";
+          #   override = { system, pkgs }:
+          #     let
+          #       inherit (mkPkgsCross system "aarch64-darwin") stdenv;
+          #       inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
+          #       cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+          #     in
+          #     rec {
+          #       buildInputs = [ Cocoa ];
+          #       NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
+          #       TARGET_CC = cc;
+          #       CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
+          #       postInstall = with pkgs; ''
+          #         cd $out/bin
+          #         mkdir -p {man,completions}
+          #         ${qemu}/bin/qemu-aarch64 ./neverest man ./man
+          #         ${qemu}/bin/qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+          #         ${qemu}/bin/qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+          #         ${qemu}/bin/qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+          #         ${qemu}/bin/qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+          #         ${qemu}/bin/qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+          #         tar -czf neverest.tgz neverest man completions
+          #         ${zip}/bin/zip -r neverest.zip neverest man completions
+          #       '';
+          #     };
+          # };
         };
       };
 
