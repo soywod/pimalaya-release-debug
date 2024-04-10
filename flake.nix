@@ -133,14 +133,15 @@
             override = { system, pkgs }:
               let
                 inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
-                inherit (mkPkgsCross system "aarch64-darwin") stdenv; in
-              rec {
+                inherit (mkPkgsCross system "aarch64-darwin") stdenv;
+                targetCc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc"; in
+              {
                 buildInputs = [ Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit";
-                TARGET_CC = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
-                CC = TARGET_CC;
-                LD = TARGET_CC;
-                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${TARGET_CC}" ];
+                TARGET_CC = targetCc;
+                CC = targetCc;
+                LD = targetCc;
+                CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${targetCc}" ];
                 postInstall = with pkgs; ''
                   cd $out/bin
                   mkdir -p {man,completions}
