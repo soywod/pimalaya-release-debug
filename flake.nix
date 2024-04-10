@@ -31,8 +31,9 @@
       # cross target systems.
       crossBuildTargets = {
         x86_64-linux = rec {
-          x86_64-unknown-linux-gnu = pkgs: {
+          x86_64-unknown-linux-musl = pkgs: {
             buildInputs = with pkgs; [ zip ];
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags;
             postInstall = ''
               cd $out/bin
               mkdir -p {man,completions}
@@ -46,15 +47,28 @@
               zip -r neverest.zip neverest man completions
             '';
           };
-          x86_64-unknown-linux-musl = pkgs: {
-            inherit (x86_64-unknown-linux-gnu pkgs) buildInputs postInstall;
-            CARGO_BUILD_RUSTFLAGS = staticRustFlags;
+          aarch64-unknown-linux-musl = pkgs: rec {
+            buildInputs = with pkgs; [ qemu zip ];
+            TARGET_CC = with pkgs.pkgsCross.aarch64-multiplatform-musl; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
+            CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
+            postInstall = ''
+              cd $out/bin
+              mkdir -p {man,completions}
+              qemu-aarch64 ./neverest man ./man
+              qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
+              qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
+              qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
+              qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
+              qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
+              tar -czf neverest.tgz neverest man completions
+              zip -r neverest.zip neverest man completions
+            '';
           };
           x86_64-pc-windows-gnu = pkgs: rec {
             strictDeps = true;
             depsBuildBuild = with pkgs; [
-              (wine.override { wineBuild = "wine64"; })
               zip
+              (wine.override { wineBuild = "wine64"; })
               pkgsCross.mingwW64.stdenv.cc
               pkgsCross.mingwW64.windows.pthreads
             ];
@@ -73,28 +87,6 @@
               tar -czf neverest.tgz neverest.exe man completions
               zip -r neverest.zip neverest.exe man completions
             '';
-          };
-          aarch64-unknown-linux-gnu = pkgs: rec {
-            buildInputs = with pkgs; [ qemu zip ];
-            TARGET_CC = with pkgs.pkgsCross.aarch64-multiplatform; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
-            CARGO_BUILD_RUSTFLAGS = [ "-C" "linker=${TARGET_CC}" ];
-            postInstall = ''
-              cd $out/bin
-              mkdir -p {man,completions}
-              qemu-aarch64 ./neverest man ./man
-              qemu-aarch64 ./neverest completion bash > ./completions/neverest.bash
-              qemu-aarch64 ./neverest completion elvish > ./completions/neverest.elvish
-              qemu-aarch64 ./neverest completion fish > ./completions/neverest.fish
-              qemu-aarch64 ./neverest completion powershell > ./completions/neverest.powershell
-              qemu-aarch64 ./neverest completion zsh > ./completions/neverest.zsh
-              tar -czf neverest.tgz neverest man completions
-              zip -r neverest.zip neverest man completions
-            '';
-          };
-          aarch64-unknown-linux-musl = pkgs: rec {
-            inherit (aarch64-unknown-linux-gnu pkgs) buildInputs postInstall;
-            TARGET_CC = with pkgs.pkgsCross.aarch64-multiplatform-musl; "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
-            CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-C" "linker=${TARGET_CC}" ];
           };
         };
         x86_64-darwin = rec {
