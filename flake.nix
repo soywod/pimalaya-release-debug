@@ -140,7 +140,7 @@
               let
                 # inherit (mkPkgsCross system "aarch64-darwin") stdenv;
                 inherit ((mkPkgsCross system "aarch64-darwin").pkgsStatic) stdenv;
-                inherit (pkgs.darwin.apple_sdk.frameworks) AppKit Cocoa;
+                inherit (pkgs.pkgsStatic.darwin.apple_sdk.frameworks) AppKit Cocoa;
                 cc = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc";
               in
               rec {
