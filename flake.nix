@@ -2,7 +2,7 @@
   description = "CLI to synchronize and backup emails";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -102,7 +102,7 @@
                 buildInputs = [ Cocoa ];
                 NIX_LDFLAGS = "-F${AppKit}/Library/Frameworks -framework AppKit -F${Cocoa}/Library/Frameworks -framework Cocoa";
                 TARGET_CC = cc;
-                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" ];
+                CARGO_BUILD_RUSTFLAGS = staticRustFlags ++ [ "-Clinker=${cc}" "-Lframework=${Cocoa}/Library/Frameworks" ];
                 postInstall = mkPostInstall {
                   inherit pkgs;
                   bin = "${pkgs.qemu}/bin/qemu-aarch64 ./neverest";
