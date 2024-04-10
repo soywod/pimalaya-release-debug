@@ -17,20 +17,20 @@ machine=$(uname -m | tr [:upper:] [:lower:])
 
 case $system in
     msys*|mingw*|cygwin*|win*)
-	target=x86_64-pc-windows-gnu
+	target=x86_64-windows
 	binary=neverest.exe;;
 
     linux|freebsd)
 	case $machine in
-	    x86_64) target=x86_64-unknown-linux-gnu;;
-	    arm64|aarch64) target=aarch64-unknown-linux-gnu;;
+	    x86_64) target=x86_64-linux;;
+	    arm64|aarch64) target=arm64-linux;;
 	    *) die "Unsupported machine $machine for system $system";;
 	esac;;
 
     darwin)
 	case $machine in
-	    x86_64) target=x86_64-apple-darwin;;
-	    arm64|aarch64) target=aarch64-apple-darwin;;
+	    x86_64) target=x86_64-macos;;
+	    arm64|aarch64) target=arm64-macos;;
 	    *) die "Unsupported machine $machine for system $system";;
 	esac;;
 

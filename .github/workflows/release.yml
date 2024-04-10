@@ -27,20 +27,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-musl
-            name: x86_64-linux
+          - target: x86_64-linux
             os: ubuntu-latest
-          - target: aarch64-unknown-linux-musl
-            name: arm64-linux
+          - target: arm64-linux
             os: ubuntu-latest
-          - target: x86_64-pc-windows-gnu
-            name: x86_64-windows
+          - target: x86_64-windows
             os: ubuntu-latest
-          - target: x86_64-apple-darwin
-            name: x86_64-macos
+          - target: x86_64-macos
             os: macos-latest
-          - target: aarch64-apple-darwin
-            name: arm64-macos
+          - target: arm64-macos
             os: macos-latest
     steps:
       - name: Checkout code
