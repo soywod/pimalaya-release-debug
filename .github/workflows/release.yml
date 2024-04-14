@@ -38,8 +38,6 @@ jobs:
           - target: arm64-macos
             os: macos-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2        
       - name: Install Nix
         uses: cachix/install-nix-action@v24
         with:
@@ -52,8 +50,11 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build release archive
         run: |
+          git clone https://git.sr.ht/~soywod/neverest-cli
+          cd neverest-cli
           nix build -L .#${{ matrix.target }}
-          cp result/bin/neverest* .
+          cd ..
+          cp neverest-cli/result/bin/neverest* .
       - name: Upload tgz release archive
         uses: actions/upload-release-asset@v1
         env:
