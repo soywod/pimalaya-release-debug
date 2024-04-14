@@ -8,7 +8,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     fenix = {
-      url = "github:nix-community/fenix";
+      url = "github:soywod/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     naersk = {
