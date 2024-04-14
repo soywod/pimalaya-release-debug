@@ -9,23 +9,16 @@ in
     inherit file sha256;
   };
 
-  fromTarget = { pkgs, buildPlatform, targetPlatform ? null }:
+  fromTarget = { pkgs, buildPlatform, targetPlatform }:
     let
-      inherit ((pkgs.lib.importTOML file).toolchain) channel;
-      fenixToolchain = fenix.packages.${buildPlatform};
-      rustToolchain = fenix.packages.${buildPlatform}.fromToolchainName {
-        inherit sha256;
-        name = channel;
-      };
+      name = (pkgs.lib.importTOML file).toolchain.channel;
+      fenixPackage = fenix.packages.${buildPlatform};
+      toolchain = fenixPackage.fromToolchainName { inherit name sha256; };
+      targetToolchain = fenixPackage.targets.${targetPlatform}.fromToolchainName { inherit name sha256; };
     in
-    if
-      isNull targetPlatform
-    then
-      rustToolchain
-    else
-      fenixToolchain.combine [
-        rustToolchain.rustc
-        rustToolchain.cargo
-        fenixToolchain.targets.${targetPlatform}.fromToolchainFile {inherit file sha256;}
-      ];
+    fenixPackage.combine [
+      toolchain.rustc
+      toolchain.cargo
+      targetToolchain.rust-std
+    ];
 }
