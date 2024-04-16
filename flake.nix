@@ -171,12 +171,12 @@
           package' = {
             name = "himalaya";
             src = gitignoreSource ./.;
-            overrideMain = _: {
-              postInstall = ''
-                mkdir -p $out/share/applications/
-                cp assets/himalaya.desktop $out/share/applications/
-              '';
-            };
+            # overrideMain = _: {
+            #   postInstall = ''
+            #     mkdir -p $out/share/applications/
+            #     cp assets/himalaya.desktop $out/share/applications/
+            #   '';
+            # };
             doCheck = false;
             auditable = false;
             strictDeps = true;
