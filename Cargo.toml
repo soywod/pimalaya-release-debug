@@ -19,16 +19,16 @@ rustdoc-args = ["--cfg", "docsrs", "--document-private-items"]
 default = [
   "imap",
   "maildir",
-  "notmuch",
+  # "notmuch",
   "smtp",
   "sendmail",
 
   "account-discovery",
   "account-sync",
 
-  "pgp-commands",
-  "pgp-gpg",
-  "pgp-native",
+  # "pgp-commands",
+  # "pgp-gpg",
+  # "pgp-native",
 ]
 
 imap = ["email-lib/imap"]
